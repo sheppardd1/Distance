@@ -153,7 +153,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } else i++;
 
 
-            //netAcceleration = triplePythagorean(xAv, yAv, zAv); //should we do pythegorean on acceleration or distance?? now or later?
 
             //Now, get distance:
             //Method 1: dx = v0 * t + 0.5 * a * t^2
@@ -171,7 +170,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             distanceBx = ((speed0x * speed0x) - (oldSpeed0x * oldSpeed0x)) / (2 * xAv);
             distanceBy = ((speed0y * speed0y) - (oldSpeed0y * oldSpeed0y)) / (2 * yAv);
             distanceBz = ((speed0z * speed0z) - (oldSpeed0z * oldSpeed0z)) / (2 * zAv);
-
 
             distanceABx = (distanceAx + distanceBx) / 2;
             distanceABy = (distanceAy + distanceBy) / 2;
