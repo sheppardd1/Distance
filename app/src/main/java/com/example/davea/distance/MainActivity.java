@@ -86,6 +86,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 i = 0;
                 TV1.setText("");
                 TV2.setText("");
+                distanceTraveledAB = 0;
+                distanceTraveledA = 0;
+                distanceTraveledB = 0;
             }
         });
     }
@@ -177,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             distanceTraveledA += triplePythagorean(distanceAx, distanceAy, distanceAz);
             distanceTraveledB += triplePythagorean(distanceBx, distanceBy, distanceBz);
-            distanceTraveledAB += (distanceTraveledA + distanceTraveledB) / 2;
+            distanceTraveledAB = ((distanceTraveledA + distanceTraveledB) / 2);
 
             TV2.setText("A: " + distanceTraveledA + "\nB: " + distanceTraveledB + "\nAverage: " + distanceTraveledAB);
         }
