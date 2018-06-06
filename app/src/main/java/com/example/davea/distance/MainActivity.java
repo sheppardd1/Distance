@@ -39,8 +39,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     //sensors:
-//    public Sensor accelerometer;
-//    public SensorManager sensorManager;
+    public Sensor accelerometer;
+    public SensorManager sensorManager;
 //    public SensorManager RVSensorManager;
 //    public Sensor RVSensor;
     public SensorManager LASensorManager;
@@ -95,10 +95,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     public void setup() {
         //set up accelerometer:
-        /*sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         assert sensorManager != null;   //ensures next line does not return null pointer exception
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);*/
+        sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);
 
         //set up rotation vector sensor:
     /*  RVSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -108,11 +108,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         RVSensorManager.registerListener(this, RVSensor, RVSensorManager.SENSOR_DELAY_NORMAL);*/
 
         //set up Linear acceleration sensor:
-        LASensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+     /*   LASensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         assert LASensorManager != null;
         LASensor = LASensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         assert LASensor != null;
-        LASensorManager.registerListener(this, LASensor, LASensorManager.SENSOR_DELAY_NORMAL);
+        LASensorManager.registerListener(this, LASensor, LASensorManager.SENSOR_DELAY_NORMAL);*/
 
         //buttons:
         BtnStart = findViewById(R.id.Start);
@@ -150,20 +150,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             averageAcceleration[1] = (averageAcceleration[1] * i + y) / (i + 1);
             averageAcceleration[2] = (averageAcceleration[2] * i + z) / (i + 1);
 
-
-
             if (i == 0){
                 for(int j = 0; j < 3; j++) {
                     distanceA[j] = 0;
                     distanceB[j] = 0;
                     distanceAB[j] =0;
                 }
-            } else if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
+            }
+
+            if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
                 TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
                 i = 0;
-                for(int j = 0; j < 3; j++) {
+                /*for(int j = 0; j < 3; j++) {
                     averageAcceleration[j] = 0;
-                }
+                }*/
             } else i++;
 
             //Now, get distance:
@@ -171,8 +171,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             for(int j = 0; j < 3; j++) {
                 distanceA[j] = speed0[j] * TIME_INTERVAL + 0.5 * averageAcceleration[j] * TIME_INTERVAL * TIME_INTERVAL;
             }
-
-
 
             //oldSpeed0 = speed0:
             System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
