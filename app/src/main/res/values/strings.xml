@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Distance</string>
+    <string name="start_stop">start/stop</string>
+    <string name="clear">clear</string>
+</resources>
