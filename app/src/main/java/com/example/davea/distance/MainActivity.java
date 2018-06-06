@@ -13,7 +13,6 @@ import android.widget.TextView;
 
 //import com.example.davea.distance.R;
 
-
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     //UI:
@@ -22,9 +21,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public TextView TV2;
 
     //variables:
-    public float xAv;
-    public float yAv;
-    public float zAv;
+    public float averageAcceleration[] = new float[3];
     public float x, y, z;
     public long lastUpdateTime = 0;
     public int i = 0;
@@ -33,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public double distanceB[] = new double[3];
     public double distanceAB[] = new double[3];
     public double speed0[] = new double[3];
+    double oldSpeed0[] = new double[3];
     public double distanceTraveledAB[] = new double[3];
     public double distanceTraveledA[] = new double[3];
     public double distanceTraveledB[] = new double[3];
@@ -76,12 +74,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View v) {
                 on = false;
                 i = 0;
+                x = y = z = 0;
                 TV1.setText("");
                 TV2.setText("");
-                for(int j = 0; j < 3; j++) {
-                    distanceTraveledAB[j] = 0;
+                totalDistance = 0;
+                for(int j = 0; j < 3; j++){
+                    distanceA[j] = 0;
+                    distanceAB[j] = 0;
+                    distanceB[j] = 0;
                     distanceTraveledA[j] = 0;
                     distanceTraveledB[j] = 0;
+                    distanceTraveledAB[j] = 0;
+                    speed0[j] = 0;
+                    oldSpeed0[j] = 0;
+                    averageAcceleration[j] = 0;
                 }
             }
         });
@@ -125,8 +131,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             speed0[0] = 0;
         }
 
-
-
     }
 
     @Override
@@ -140,11 +144,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             y = event.values[1];
             z = event.values[2];
 
-
             //compute collective/cumulative average instead of accumulating values and later getting average
-            xAv = (xAv * i + x) / (i + 1);
-            yAv = (yAv * i + y) / (i + 1);
-            zAv = (zAv * i + z) / (i + 1);
+
+            averageAcceleration[0] = (averageAcceleration[0] * i + x) / (i + 1);
+            averageAcceleration[1] = (averageAcceleration[1] * i + y) / (i + 1);
+            averageAcceleration[2] = (averageAcceleration[2] * i + z) / (i + 1);
+
+
 
             if (i == 0){
                 for(int j = 0; j < 3; j++) {
@@ -153,36 +159,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     distanceAB[j] =0;
                 }
             } else if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
-                TV1.setText("Accelerations\nX: " + xAv + "\n" + "Y: " + yAv + "\n" + "Z: " + zAv);
+                TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
                 i = 0;
-                xAv = yAv = zAv = 0;
+                for(int j = 0; j < 3; j++) {
+                    averageAcceleration[j] = 0;
+                }
             } else i++;
-
-
 
             //Now, get distance:
             //Method 1: dx = v0 * t + 0.5 * a * t^2
-            distanceA[0] = speed0[0] * TIME_INTERVAL + 0.5 * xAv * TIME_INTERVAL * TIME_INTERVAL;
-            distanceA[1] = speed0[1] * TIME_INTERVAL + 0.5 * yAv * TIME_INTERVAL * TIME_INTERVAL;
-            distanceA[2] = speed0[2] * TIME_INTERVAL + 0.5 * zAv * TIME_INTERVAL * TIME_INTERVAL;
+            for(int j = 0; j < 3; j++) {
+                distanceA[j] = speed0[j] * TIME_INTERVAL + 0.5 * averageAcceleration[j] * TIME_INTERVAL * TIME_INTERVAL;
+            }
 
-            double oldSpeed0[] = new double[3];
+
+
             //oldSpeed0 = speed0:
             System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
 
-            speed0[0] += xAv * TIME_INTERVAL;
-            //from: a * t = v - v0
-            speed0[1] += yAv * TIME_INTERVAL;
-            speed0[2] += zAv * TIME_INTERVAL;
+            for(int j = 0; j < 3; j++) {
+                speed0[j] += averageAcceleration[j] * TIME_INTERVAL; //from: a * t = v - v0
+            }
 
             //Method2: using dx = (v^2 - v0^2) / (2 * a)
-            distanceB[0] = ((speed0[0] * speed0[0]) - (oldSpeed0[0] * oldSpeed0[0])) / (2 * xAv);
-            distanceB[1] = ((speed0[1] * speed0[1]) - (oldSpeed0[1] * oldSpeed0[1])) / (2 * yAv);
-            distanceB[2] = ((speed0[2] * speed0[2]) - (oldSpeed0[2] * oldSpeed0[2])) / (2 * zAv);
+            for(int j = 0; j < 3; j++) {
+                distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
+            }
 
-            distanceAB[0] = (distanceA[0] + distanceB[0]) / 2;
-            distanceAB[1] = (distanceA[1] + distanceB[1]) / 2;
-            distanceAB[2] = (distanceA[2] + distanceB[2]) / 2;
+            for(int j = 0; j < 3; j++) {
+                distanceAB[j] = (distanceA[j] + distanceB[j]) / 2;
+            }
+
 
             for (int j = 0; j < 3; j++) {
                 distanceTraveledA[j] += distanceA[j];
@@ -192,14 +199,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
 
-            TV2.setText("A: " + distanceTraveledA + "\nB: " + distanceTraveledB + "\nAverage: " + distanceTraveledAB + "\nTotal: " + totalDistance);
+            TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance);
 
-            int x = 1;
         }
 
-        /*}else if (sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            TVData.setText("\nX: " + event.values[0] + "\nY: " + event.values[1] + "\nZ: " + event.values[2]);
-        }*/
     }
 
 
