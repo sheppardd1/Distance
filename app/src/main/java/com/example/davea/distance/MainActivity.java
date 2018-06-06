@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Sensor LASensor;
 
     //constants:
-    final public int INTERVAL = 500;
-    final public int NUMBER_OF_POINTS_TO_AVERAGE = 4;
+    final public int INTERVAL = 200;
+    final public int NUMBER_OF_POINTS_TO_AVERAGE = 5;
     //how often we calculate the average acceleration (s):
     final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
 
@@ -181,7 +181,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             //Method2: using dx = (v^2 - v0^2) / (2 * a)
             for(int j = 0; j < 3; j++) {
-                distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
+                if(averageAcceleration[j] != 0) {
+                    distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
+                }else distanceB[j] = 0;
             }
 
             for(int j = 0; j < 3; j++) {
