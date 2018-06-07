@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.sql.SQLSyntaxErrorException;
 
@@ -25,20 +26,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //variables:
     public float averageAcceleration[] = new float[3];
     public float x, y, z;
-    public long lastUpdateTime = 0;
+    public double lastUpdateTime = 0;
     public int i = 0;
     public boolean on = true;
     public double distanceA[] = new double[3];
-    public double distanceB[] = new double[3];
-    public double distanceAB[] = new double[3];
+    //public double distanceB[] = new double[3];
+    //public double distanceAB[] = new double[3];
     public double speed0[] = new double[3];
     double oldSpeed0[] = new double[3];
-    public double distanceTraveledAB[] = new double[3];
+    //public double distanceTraveledAB[] = new double[3];
     public double distanceTraveledA[] = new double[3];
-    public double distanceTraveledB[] = new double[3];
+    //public double distanceTraveledB[] = new double[3];
     public double totalDistance = 0;
     public double netAcceleration = 0;
-    public long startTime = 0;
+    public double startTime = 0;
+    public double elapsedTime = 0;
+    public double totalTime = 0;
 
 
     //sensors:
@@ -50,10 +53,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Sensor LASensor;
 
     //constants:
-    final public int INTERVAL = 100;
-    final public int NUMBER_OF_POINTS_TO_AVERAGE = 10;
+    final public int INTERVAL = 200;
+    final public int NUMBER_OF_POINTS_TO_AVERAGE = 5;
     //how often we calculate the average acceleration (s):
-    final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
+    //final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
 
 
     @Override
@@ -85,11 +88,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void setup() {
-        //set up accelerometer:
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        assert sensorManager != null;   //ensures next line does not return null pointer exception
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);
+
+        //Try to set up using Linear Acceleration sensor, which neglects gravity
+        //If the device does not have the LA sensor, then use regular accelerometer for testing purposes
+        //set up Linear acceleration sensor:
+        LASensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        assert LASensorManager != null;
+        LASensor = LASensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if(LASensor != null) {
+            LASensorManager.registerListener(this, LASensor, LASensorManager.SENSOR_DELAY_NORMAL);
+        }
+        else {  //for testing purposes only:
+            //if no LA sensor on device, set up accelerometer as alternative:
+            sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            assert sensorManager != null;   //ensures next line does not return null pointer exception
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);
+            Toast.makeText(this, "REVERTING TO ACCELEROMETER\nACCURACY REDUCED\nUSE FOR TESTING PURPOSES ONLY", Toast.LENGTH_LONG).show();
+        }
 
         //set up rotation vector sensor:
     /*  RVSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -98,12 +114,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         assert RVSensor != null;
         RVSensorManager.registerListener(this, RVSensor, RVSensorManager.SENSOR_DELAY_NORMAL);*/
 
-        //set up Linear acceleration sensor:
-     /*   LASensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        assert LASensorManager != null;
-        LASensor = LASensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        assert LASensor != null;
-        LASensorManager.registerListener(this, LASensor, LASensorManager.SENSOR_DELAY_NORMAL);*/
 
         //buttons:
         BtnStart = findViewById(R.id.Start);
@@ -112,17 +122,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         TV1 = findViewById(R.id.TV1);
         TV2 = findViewById(R.id.TV2);
 
-        for(int j = 0; j < 3; j++){
-            distanceA[j] = 0;
-            distanceAB[j] = 0;
-            distanceB[j] = 0;
-            distanceTraveledA[j] = 0;
-            distanceTraveledB[j] = 0;
-            distanceTraveledAB[j] = 0;
-            speed0[0] = 0;
-            startTime = 0;
-        }
-
+        reset();
     }
 
     public void reset(){
@@ -130,15 +130,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         i = 0;
         for(int j = 0; j < 3; j++){
             distanceA[j] = 0;
-            distanceAB[j] = 0;
-            distanceB[j] = 0;
+            //distanceAB[j] = 0;
+            //distanceB[j] = 0;
             distanceTraveledA[j] = 0;
-            distanceTraveledB[j] = 0;
-            distanceTraveledAB[j] = 0;
+            //distanceTraveledB[j] = 0;
+            //distanceTraveledAB[j] = 0;
             speed0[j] = 0;
             oldSpeed0[j] = 0;
             averageAcceleration[j] = 0;
             startTime = 0;
+            totalTime = 0;
         }
     }
 
@@ -151,6 +152,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             x = event.values[0];
             y = event.values[1];
             z = event.values[2];
+            TV1.setText("Acceleration:\nX: " + x + "\nY: " + y + "\nZ: " + z + "\nCurrent Distance:\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
+                    + distanceA[2]);
 
             //compute collective/cumulative average instead of accumulating values and later getting average
 
@@ -162,58 +165,44 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 for(int j = 0; j < 3; j++) {
                     startTime = System.currentTimeMillis();
                     distanceA[j] = 0;
-                    distanceB[j] = 0;
-                    distanceAB[j] =0;
                 }
             }
 
             if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
 
-                long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
                 //elapsedTime should be about the same as TIME_INTERVAL, but using elapsedTime ensures that the true time is used
+                elapsedTime = (System.currentTimeMillis() - startTime) / (long)1000.0;
+                totalTime += elapsedTime;
 
                 //oldSpeed0 = speed0:
                 System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
 
-                //set speed every TIME_INTERVAL seconds
+                //set speed (future v0) every TIME_INTERVAL seconds
                 for(int j = 0; j < 3; j++) {
                     speed0[j] += averageAcceleration[j] * elapsedTime; //from: a * t = v - v0
                 }
 
                 //Now, get distance:
-                //Method 1: dx = v0 * t + 0.5 * a * t^2
+                //dx = v0 * t + 0.5 * a * t^2
                 for(int j = 0; j < 3; j++) {
                     distanceA[j] = oldSpeed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime;
                 }
 
-                //Method2: using dx = (v^2 - v0^2) / (2 * a)
                 for(int j = 0; j < 3; j++) {
-                    if(averageAcceleration[j] != 0) {
-                        distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
-                    }else distanceB[j] = oldSpeed0[j] * elapsedTime;
-                }
-
-                for(int j = 0; j < 3; j++) {
-                    distanceAB[j] = (distanceA[j] + distanceB[j]) / 2;
-                }
-
-
-                for (int j = 0; j < 3; j++) {
                     distanceTraveledA[j] += distanceA[j];
-                    distanceTraveledB[j] += distanceB[j];
-                    distanceTraveledAB[j] = ((distanceTraveledA[j] + distanceTraveledB[j]) / 2);
                 }
 
-                totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
+                totalDistance = triplePythagorean(distanceTraveledA[0], distanceTraveledA[1], distanceTraveledA[2]);
 
-                TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance + "\n Elapsed Time: " + elapsedTime);
+                TV2.setText("Cumulative:\nX: " + distanceTraveledA[0] + "\nY: " + distanceTraveledA[1] + "\nZ: "
+                        + distanceTraveledA[2] + "\nTotal: " + totalDistance + "\nElapsed Time: " + elapsedTime
+                        + "\nTotal Time: " + totalTime);
 
-
-                TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
+                /*TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: " + averageAcceleration[2] + "\nCurrent\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
+                        + distanceA[2]);*/
+                //TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
                 i = 0;
-                /*for(int j = 0; j < 3; j++) {
-                    averageAcceleration[j] = 0;
-                }*/
+
             } else i++;
 
 
@@ -233,3 +222,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 }
 
+/* Stopped using method 2 since results were the same as method 1 to aroud 15 decimal places
+
+//Method2: using dx = (v^2 - v0^2) / (2 * a)
+                for(int j = 0; j < 3; j++) {
+        if(averageAcceleration[j] != 0) {
+        distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
+        }else distanceB[j] = oldSpeed0[j] * elapsedTime;
+        }
+
+        for(int j = 0; j < 3; j++) {
+        distanceAB[j] = (distanceA[j] + distanceB[j]) / 2;
+        }
+
+
+        for (int j = 0; j < 3; j++) {
+        distanceTraveledA[j] += distanceA[j];
+        distanceTraveledB[j] += distanceB[j];
+        distanceTraveledAB[j] = ((distanceTraveledA[j] + distanceTraveledB[j]) / 2);
+        }
+
+        totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
+        */
