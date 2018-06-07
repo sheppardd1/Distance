@@ -43,20 +43,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public double elapsedTime = 0;
     public double totalTime = 0;
 
-
     //sensors:
     public Sensor accelerometer;
     public SensorManager sensorManager;
-//    public SensorManager RVSensorManager;
-//    public Sensor RVSensor;
     public SensorManager LASensorManager;
     public Sensor LASensor;
 
     //constants:
     final public int INTERVAL = 200;
-    final public int NUMBER_OF_POINTS_TO_AVERAGE = 5;
-    //how often we calculate the average acceleration (s):
-    //final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
+    final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
+    final public float EPSILON = (float) 1.8;
+
 
 
     @Override
@@ -114,7 +111,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         assert RVSensor != null;
         RVSensorManager.registerListener(this, RVSensor, RVSensorManager.SENSOR_DELAY_NORMAL);*/
 
-
         //buttons:
         BtnStart = findViewById(R.id.Start);
         BtnClear = findViewById(R.id.Clear);
@@ -152,8 +148,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             x = event.values[0];
             y = event.values[1];
             z = event.values[2];
-            TV1.setText("Acceleration:\nX: " + x + "\nY: " + y + "\nZ: " + z + "\nCurrent Distance:\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
-                    + distanceA[2]);
+            //TV1.setText("Acceleration:\nX: " + x + "\nY: " + y + "\nZ: " + z + "\nCurrent Distance:\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
+            //       + distanceA[2]);
 
             //compute collective/cumulative average instead of accumulating values and later getting average
 
@@ -180,46 +176,53 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //set speed (future v0) every TIME_INTERVAL seconds
                 for(int j = 0; j < 3; j++) {
                     speed0[j] += averageAcceleration[j] * elapsedTime; //from: a * t = v - v0
+                    if(speed0[j] >= 0){
+                        speed0[j] -= (EPSILON * elapsedTime*elapsedTime * 0.5);
+                    }else {
+                        speed0[j] += (EPSILON * elapsedTime * elapsedTime * 0.5);
+                    }
                 }
 
                 //Now, get distance:
                 //dx = v0 * t + 0.5 * a * t^2
                 for(int j = 0; j < 3; j++) {
-                    distanceA[j] = oldSpeed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime;
+                    distanceA[j] = (oldSpeed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime);
                 }
 
                 for(int j = 0; j < 3; j++) {
                     distanceTraveledA[j] += distanceA[j];
+                    //account for error: distance_calibrated = distance_calculated - EPSILON * t^2 * 0.5
+                    /*if(distanceTraveledA[j] >= 0){
+                        distanceTraveledA[j] -= (EPSILON * elapsedTime*elapsedTime * 0.5);
+                    }else {
+                        distanceTraveledA[j] += (EPSILON * elapsedTime * elapsedTime * 0.5);
+                    }*/
                 }
 
-                totalDistance = triplePythagorean(distanceTraveledA[0], distanceTraveledA[1], distanceTraveledA[2]);
+                //totalDistance = triplePythagorean(distanceTraveledA[0], distanceTraveledA[1], distanceTraveledA[2]);
 
                 TV2.setText("Cumulative:\nX: " + distanceTraveledA[0] + "\nY: " + distanceTraveledA[1] + "\nZ: "
                         + distanceTraveledA[2] + "\nTotal: " + totalDistance + "\nElapsed Time: " + elapsedTime
                         + "\nTotal Time: " + totalTime);
 
-                /*TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: " + averageAcceleration[2] + "\nCurrent\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
-                        + distanceA[2]);*/
+                TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: "
+                        + averageAcceleration[2] + "\nCurrent Distance:\nx: " + distanceA[0] + "\ny: " + distanceA[1] + "\nz: "
+                        + distanceA[2] + "\nSpeed:\nX: " + speed0[0] + "\nY: " + speed0[1] + "\nZ: " + speed0[2]);
                 //TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
                 i = 0;
 
             } else i++;
-
-
         }
-
     }
 
     private double triplePythagorean(double a, double b, double c) {
         return (Math.sqrt((a * a) + (b * b) + (c * c)));
     }//not used yet
 
-
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //not used, but must be included for this to work
     }
-
 }
 
 /* Stopped using method 2 since results were the same as method 1 to aroud 15 decimal places
