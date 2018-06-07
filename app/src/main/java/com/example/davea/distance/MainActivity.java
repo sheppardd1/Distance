@@ -11,6 +11,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.sql.SQLSyntaxErrorException;
+
 //import com.example.davea.distance.R;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public double distanceTraveledB[] = new double[3];
     public double totalDistance = 0;
     public double netAcceleration = 0;
+    public long startTime = 0;
 
 
     //sensors:
@@ -73,22 +76,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onClick(View v) {
                 on = false;
-                i = 0;
                 x = y = z = 0;
                 TV1.setText("");
                 TV2.setText("");
-                totalDistance = 0;
-                for(int j = 0; j < 3; j++){
-                    distanceA[j] = 0;
-                    distanceAB[j] = 0;
-                    distanceB[j] = 0;
-                    distanceTraveledA[j] = 0;
-                    distanceTraveledB[j] = 0;
-                    distanceTraveledAB[j] = 0;
-                    speed0[j] = 0;
-                    oldSpeed0[j] = 0;
-                    averageAcceleration[j] = 0;
-                }
+                reset();
             }
         });
     }
@@ -129,14 +120,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             distanceTraveledB[j] = 0;
             distanceTraveledAB[j] = 0;
             speed0[0] = 0;
+            startTime = 0;
         }
 
     }
 
+    public void reset(){
+        totalDistance = 0;
+        i = 0;
+        for(int j = 0; j < 3; j++){
+            distanceA[j] = 0;
+            distanceAB[j] = 0;
+            distanceB[j] = 0;
+            distanceTraveledA[j] = 0;
+            distanceTraveledB[j] = 0;
+            distanceTraveledAB[j] = 0;
+            speed0[j] = 0;
+            oldSpeed0[j] = 0;
+            averageAcceleration[j] = 0;
+            startTime = 0;
+        }
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Sensor sensor = event.sensor;
-        //if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+
         if (System.currentTimeMillis() - lastUpdateTime > INTERVAL && on) {
             lastUpdateTime = System.currentTimeMillis();
 
@@ -152,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             if (i == 0){
                 for(int j = 0; j < 3; j++) {
+                    startTime = System.currentTimeMillis();
                     distanceA[j] = 0;
                     distanceB[j] = 0;
                     distanceAB[j] =0;
@@ -159,6 +168,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
 
             if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
+
+                long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+
+                //set speed every TIME_INTERVAL seconds
+                for(int j = 0; j < 3; j++) {
+                    speed0[j] += averageAcceleration[j] * elapsedTime; //from: a * t = v - v0
+                }
+
+                //Now, get distance:
+                //Method 1: dx = v0 * t + 0.5 * a * t^2
+                for(int j = 0; j < 3; j++) {
+                    distanceA[j] = speed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime;
+                }
+
+                //oldSpeed0 = speed0:
+                System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
+
+                //Method2: using dx = (v^2 - v0^2) / (2 * a)
+                for(int j = 0; j < 3; j++) {
+                    if(averageAcceleration[j] != 0) {
+                        distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
+                    }else distanceB[j] = 0;
+                }
+
+                for(int j = 0; j < 3; j++) {
+                    distanceAB[j] = (distanceA[j] + distanceB[j]) / 2;
+                }
+
+
+                for (int j = 0; j < 3; j++) {
+                    distanceTraveledA[j] += distanceA[j];
+                    distanceTraveledB[j] += distanceB[j];
+                    distanceTraveledAB[j] = ((distanceTraveledA[j] + distanceTraveledB[j]) / 2);
+                }
+
+                totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
+
+                TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance);
+
+
                 TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
                 i = 0;
                 /*for(int j = 0; j < 3; j++) {
@@ -166,40 +215,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }*/
             } else i++;
 
-            //Now, get distance:
-            //Method 1: dx = v0 * t + 0.5 * a * t^2
-            for(int j = 0; j < 3; j++) {
-                distanceA[j] = speed0[j] * TIME_INTERVAL + 0.5 * averageAcceleration[j] * TIME_INTERVAL * TIME_INTERVAL;
-            }
-
-            //oldSpeed0 = speed0:
-            System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
-
-            for(int j = 0; j < 3; j++) {
-                speed0[j] += averageAcceleration[j] * TIME_INTERVAL; //from: a * t = v - v0
-            }
-
-            //Method2: using dx = (v^2 - v0^2) / (2 * a)
-            for(int j = 0; j < 3; j++) {
-                if(averageAcceleration[j] != 0) {
-                    distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
-                }else distanceB[j] = 0;
-            }
-
-            for(int j = 0; j < 3; j++) {
-                distanceAB[j] = (distanceA[j] + distanceB[j]) / 2;
-            }
-
-
-            for (int j = 0; j < 3; j++) {
-                distanceTraveledA[j] += distanceA[j];
-                distanceTraveledB[j] += distanceB[j];
-                distanceTraveledAB[j] = ((distanceTraveledA[j] + distanceTraveledB[j]) / 2);
-            }
-
-            totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
-
-            TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance);
 
         }
 
