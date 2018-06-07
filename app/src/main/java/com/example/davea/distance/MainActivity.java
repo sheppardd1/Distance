@@ -50,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Sensor LASensor;
 
     //constants:
-    final public int INTERVAL = 50;
-    final public int NUMBER_OF_POINTS_TO_AVERAGE = 20;
+    final public int INTERVAL = 100;
+    final public int NUMBER_OF_POINTS_TO_AVERAGE = 10;
     //how often we calculate the average acceleration (s):
     final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
 
@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 totalDistance = triplePythagorean(distanceTraveledAB[0], distanceTraveledAB[1], distanceTraveledAB[2]);
 
-                TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance);
+                TV2.setText("X: " + distanceTraveledAB[0] + "\nY: " + distanceTraveledAB[1] + "\nZ: " + distanceTraveledAB[2] + "\nTotal: " + totalDistance + "\n Elapsed Time: " + elapsedTime);
 
 
                 TV1.setText("Accelerations\nX: " + averageAcceleration[0] + "\n" + "Y: " + averageAcceleration[1] + "\n" + "Z: " + averageAcceleration[2]);
@@ -221,38 +221,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-
-
-/*    @Override
-    public void onSensorChanged(SensorEvent event) {
-
-        if (System.currentTimeMillis() - lastUpdateTime > INTERVAL && on) {
-            lastUpdateTime = System.currentTimeMillis();
-
-            x = event.values[0];
-            y = event.values[1];
-            z = event.values[2];
-
-
-            //compute collective/cumulative average instead of accumulating values and later getting average
-            xAv = (xAv * i + x) / (i + 1);
-            yAv = (yAv * i + y) / (i + 1);
-            zAv = (zAv * i + z) / (i + 1);
-
-            if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
-                TVAverage.setText("X: " + xAv + "\n" + "Y: " + yAv + "\n" + "Z: " + zAv);
-                i = 0;
-                xAv = yAv = zAv = 0;
-            } else i++;
-
-            TVData.setText("X: " + x + "\n" + "Y: " + y + "\n" + "Z: " + z + "\n" + "i: " + i);
-
-        }
-
-    }*/
-
     private double triplePythagorean(double a, double b, double c) {
-        return (Math.sqrt((a * a) + (b * b)) + (c * c));
+        return (Math.sqrt((a * a) + (b * b) + (c * c)));
     }//not used yet
 
 
