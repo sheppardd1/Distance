@@ -50,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Sensor LASensor;
 
     //constants:
-    final public int INTERVAL = 200;
-    final public int NUMBER_OF_POINTS_TO_AVERAGE = 5;
+    final public int INTERVAL = 50;
+    final public int NUMBER_OF_POINTS_TO_AVERAGE = 20;
     //how often we calculate the average acceleration (s):
     final public float TIME_INTERVAL = ((float)INTERVAL / 1000) * (float) NUMBER_OF_POINTS_TO_AVERAGE;
 
@@ -170,6 +170,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
 
                 long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+                //elapsedTime should be about the same as TIME_INTERVAL, but using elapsedTime ensures that the true time is used
+
+                //oldSpeed0 = speed0:
+                System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
 
                 //set speed every TIME_INTERVAL seconds
                 for(int j = 0; j < 3; j++) {
@@ -179,17 +183,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //Now, get distance:
                 //Method 1: dx = v0 * t + 0.5 * a * t^2
                 for(int j = 0; j < 3; j++) {
-                    distanceA[j] = speed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime;
+                    distanceA[j] = oldSpeed0[j] * elapsedTime + 0.5 * averageAcceleration[j] * elapsedTime * elapsedTime;
                 }
-
-                //oldSpeed0 = speed0:
-                System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
 
                 //Method2: using dx = (v^2 - v0^2) / (2 * a)
                 for(int j = 0; j < 3; j++) {
                     if(averageAcceleration[j] != 0) {
                         distanceB[j] = ((speed0[j] * speed0[j]) - (oldSpeed0[j] * oldSpeed0[j])) / (2 * averageAcceleration[j]);
-                    }else distanceB[j] = 0;
+                    }else distanceB[j] = oldSpeed0[j] * elapsedTime;
                 }
 
                 for(int j = 0; j < 3; j++) {
