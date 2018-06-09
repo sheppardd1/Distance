@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //constants:
     final public int INTERVAL = 200;
     final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
-    final public float EPSILON = (float) 0;
+    final public float EPSILON = (float) 0.1594;
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         BtnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //toggle on and off
                 on = !on;
                 i = 0;
             }
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         BtnClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //must click reset button twice to clear screen and reset data
                 if(!on) {
                     TV1.setText("");
                     TV2.setText("");
@@ -91,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         //Try to set up using Linear Acceleration sensor, which neglects gravity
         //If the device does not have the LA sensor, then use regular accelerometer for testing purposes
+
         //set up Linear acceleration sensor:
         LASensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         assert LASensorManager != null;
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             assert sensorManager != null;   //ensures next line does not return null pointer exception
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);
+            //if deice not not have LA sensor, warn user:
             Toast.makeText(this, "REVERTING TO ACCELEROMETER\nACCURACY REDUCED\nUSE FOR TESTING PURPOSES ONLY", Toast.LENGTH_LONG).show();
         }
 
@@ -119,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void reset(){
+        //reset everything to 0
         combinedTotalDistance = 0;
         i = 0;
         for(int j = 0; j < 3; j++){
@@ -142,11 +147,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on) {
 
             //compute collective/cumulative average instead of accumulating values and later getting average
-            for(int j = 0; j < 3; j++) {
+            for(int j = 0; j < 3; j++) {    //x, y, and z - must run loop thrice
                 averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j] /*- Y_AXIS_CORRECTION*/) / (i + 1);
             }
 
-            if (i == 0){
+            if (i == 0){    //used for determining the time it took from collecting data to finding the final average of the desired number of data points
                 startTime = System.currentTimeMillis();
             }
 
@@ -154,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 //computationTime should be about the same as TIME_INTERVAL, but using computationTime ensures that the true time is used, esp. for slower machines
                 computationTime = (System.currentTimeMillis() - startTime) / (long)1000;
-                totalTime += computationTime;
+                totalTime += computationTime;   //total time program has been running
 
                 //oldSpeed0 = speed0:
                 System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
@@ -170,13 +175,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     shortDistance[j] = (float) (oldSpeed0[j] * computationTime + 0.5 * averageAcceleration[j] * computationTime * computationTime);
                 }
 
+                //short distance is the distance traveled in this time period
                 for(int j = 0; j < 3; j++) {
                     totalDistance[j] += shortDistance[j];
                 }
 
                 //System.arraycopy(totalDistance, 0, totalDistanceCalibrated, 0, 3);
 
-                for(int j = 0; j < 3; j++) {
+                /*for(int j = 0; j < 3; j++) {
                     if(totalDistance[j] >= 0) {
                         totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
                         //not += because equation accounts for the fact that error accumulates over time
@@ -185,9 +191,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.1208 * totalTime * totalTime - 0.0075 * totalTime + 0.0148));
                         //not += because equation accounts for the fact that error accumulates over time
                     }else totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.1208 * totalTime * totalTime - 0.0075 * totalTime + 0.0148));
-                 }
+                 }*/
 
                 combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
+                //account for error:
+                if(combinedTotalDistance >= 0) {
+                    combinedTotalDistance = (float) (combinedTotalDistance - (0.5 * EPSILON * totalTime * totalTime));
+                    //not += because equation accounts for the fact that error accumulates over time
+                }else combinedTotalDistance = (float) (combinedTotalDistance + (0.5 * EPSILON * totalTime * totalTime));
+
 
 
                 TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: "
