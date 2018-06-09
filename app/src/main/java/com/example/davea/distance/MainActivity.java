@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
-//NOTE: ONLY THE Y-AXIS IS CURRENTLY BEING TESTED - THE X AND Z AXES ARE UNCALIBRATED
 
 
     @Override
