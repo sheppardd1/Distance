@@ -39,8 +39,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public float totalDistanceCalibrated[] = new float[3];
     public boolean done = true;
     public int k = 0;
-    public double beginTime = 0;
-    public double timeLength = 0;
+    //public double beginTime = 0;
+    //public double timeLength = 0;
 
     //sensors:
     public Sensor accelerometer;
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //constants:
     final public int INTERVAL = 200;
     final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
-    final public float EPSILON = (float) 0.0276;
+    final public float EPSILON = (float) 0;
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
