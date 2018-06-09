@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     final public int INTERVAL = 200;
     final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
     final public float EPSILON = (float) 0.0276;
-    public float Y_AXIS_CORRECTION = (float) -0.24;
+    //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
 //NOTE: ONLY THE Y-AXIS IS CURRENTLY BEING TESTED - THE X AND Z AXES ARE UNCALIBRATED
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             //compute collective/cumulative average instead of accumulating values and later getting average
             for(int j = 0; j < 3; j++) {
-                averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j] - Y_AXIS_CORRECTION) / (i + 1);
+                averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j] /*- Y_AXIS_CORRECTION*/) / (i + 1);
             }
 
             if (i == 0){
@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }else totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.1208 * totalTime * totalTime - 0.0075 * totalTime + 0.0148));
                  }
 
-                //combinedTotalDistance = triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
+                combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
 
 
                 TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: "
@@ -196,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 TV2.setText("Cumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: "
                         + totalDistanceCalibrated[2] + "\nComputation Time: " + computationTime
-                        + "\nTotal Time: " + totalTime);
+                        + "\nTotal Time: " + totalTime + "\n Total Combined Distance: " + combinedTotalDistance);
 
                 i = 0;
 
