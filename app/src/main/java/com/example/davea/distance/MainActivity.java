@@ -25,34 +25,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //variables:
     public float averageAcceleration[] = new float[3];
-    public float acceleration[] = new float[3];
-    public double lastUpdateTime = 0;
     public int i = 0;
     public boolean on = true;
     public float shortDistance[] = new float[3];
+    public float totalDistance[] = new float[3];
+    public float totalDistanceCalibrated[] = new float[3];
+    public float combinedTotalDistance = 0;
     public float speed0[] = new float[3];
     public float oldSpeed0[] = new float[3];
-    public float totalDistance[] = new float[3];
-    public float combinedTotalDistance = 0;
     public double startTime = 0;
+    public double lastUpdateTime = 0;
     public double computationTime = 0;
     public double totalTime = 0;
-    public float totalDistanceCalibrated[] = new float[3];
-    public boolean done = true;
     public int k = 0;
-    //public double beginTime = 0;
-    //public double timeLength = 0;
 
     //sensors:
     public Sensor accelerometer;
-    public SensorManager sensorManager;
+    public SensorManager accelSensorManager;
     public SensorManager LASensorManager;
     public Sensor LASensor;
 
     //constants:
     final public int INTERVAL = 200;
     final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
-    final public float EPSILON = (float) 0.1594;
+    final public float EPSILON = (float) 0;    //Adwaya's epsilon: 0.1594
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
@@ -101,12 +97,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         else {  //for testing purposes only:
             //if no LA sensor on device, set up accelerometer as alternative:
-            sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-            assert sensorManager != null;   //ensures next line does not return null pointer exception
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, accelerometer, sensorManager.SENSOR_DELAY_NORMAL);
+            accelSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            assert accelSensorManager != null;   //ensures next line does not return null pointer exception
+            accelerometer = accelSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            accelSensorManager.registerListener(this, accelerometer, accelSensorManager.SENSOR_DELAY_NORMAL);
             //if deice not not have LA sensor, warn user:
-            Toast.makeText(this, "REVERTING TO ACCELEROMETER\nACCURACY REDUCED\nUSE FOR TESTING PURPOSES ONLY", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "REVERTING TO ACCELEROMETER.\nACCURACY REDUCED.\nUSE FOR TESTING PURPOSES ONLY.", Toast.LENGTH_LONG).show();
         }
 
 
@@ -133,7 +129,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             averageAcceleration[j] = 0;
             startTime = 0;
             totalTime = 0;
-            done = true;
             k = 0;
         }
     }
@@ -146,13 +141,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on) {
 
+            //used for determining the time it took from collecting data to finding the final average of the desired number of data points
+            if (i == 0) startTime = System.currentTimeMillis();
+
             //compute collective/cumulative average instead of accumulating values and later getting average
             //x, y, and z - must run loop thrice
             for(int j = 0; j < 3; j++)
                 averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j]) / (i + 1);
-
-            //used for determining the time it took from collecting data to finding the final average of the desired number of data points
-            if (i == 0) startTime = System.currentTimeMillis();
 
             if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
 
@@ -203,7 +198,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         + "\nTotal Time: " + totalTime + "\n Total Combined Distance: " + combinedTotalDistance);
 
                 i = 0;
-
 
             } else i++;  //end if   i >= NUMBER_OF_POINTS_TO_AVERAGE - 1
 
