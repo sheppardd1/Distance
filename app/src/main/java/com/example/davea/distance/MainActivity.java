@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //variables:
     public float averageAcceleration[] = new float[3];
+    public float acceleration[] = new float[3];
     public double lastUpdateTime = 0;
     public int i = 0;
     public boolean on = true;
@@ -53,8 +54,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     final public int NUMBER_OF_POINTS_TO_AVERAGE = 2;
     final public float EPSILON = (float) 0.1594;
     //public float Y_AXIS_CORRECTION = (float) -0.24;
-
-
 
 
     @Override
@@ -143,16 +142,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        Sensor sensor = event.sensor;
+
         if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on) {
 
             //compute collective/cumulative average instead of accumulating values and later getting average
-            for(int j = 0; j < 3; j++) {    //x, y, and z - must run loop thrice
-                averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j] /*- Y_AXIS_CORRECTION*/) / (i + 1);
-            }
+            //x, y, and z - must run loop thrice
+            for(int j = 0; j < 3; j++)
+                averageAcceleration[j] = (averageAcceleration[j] * i + event.values[j]) / (i + 1);
 
-            if (i == 0){    //used for determining the time it took from collecting data to finding the final average of the desired number of data points
-                startTime = System.currentTimeMillis();
-            }
+            //used for determining the time it took from collecting data to finding the final average of the desired number of data points
+            if (i == 0) startTime = System.currentTimeMillis();
 
             if (i >= NUMBER_OF_POINTS_TO_AVERAGE - 1) {
 
@@ -160,45 +160,38 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 computationTime = (System.currentTimeMillis() - startTime) / (long)1000;
                 totalTime += computationTime;   //total time program has been running
 
-                //oldSpeed0 = speed0:
-                System.arraycopy(speed0, 0, oldSpeed0, 0, 3);
+                System.arraycopy(speed0, 0, oldSpeed0, 0, 3); //oldSpeed0 = speed0
 
                 //set speed (future v0) every computationTime seconds ~ TIME_INTERVAL
-                for(int j = 0; j < 3; j++) {
+                for(int j = 0; j < 3; j++)
                     speed0[j] += averageAcceleration[j] * computationTime; //from: a * t = v - v0
-                }
 
-                //Now, get distance:
-                //dx = v0 * t + 0.5 * a * t^2
-                for(int j = 0; j < 3; j++) {
+                //Now, get distance: dx = v0 * t + 0.5 * a * t^2
+                for(int j = 0; j < 3; j++)
                     shortDistance[j] = (float) (oldSpeed0[j] * computationTime + 0.5 * averageAcceleration[j] * computationTime * computationTime);
-                }
 
                 //short distance is the distance traveled in this time period
-                for(int j = 0; j < 3; j++) {
-                    totalDistance[j] += shortDistance[j];
-                }
-
-                //System.arraycopy(totalDistance, 0, totalDistanceCalibrated, 0, 3);
-
-                /*for(int j = 0; j < 3; j++) {
-                    if(totalDistance[j] >= 0) {
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
-                        //not += because equation accounts for the fact that error accumulates over time
-                    }else totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
-                    if(totalDistance[j] >= 0) {
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.1208 * totalTime * totalTime - 0.0075 * totalTime + 0.0148));
-                        //not += because equation accounts for the fact that error accumulates over time
-                    }else totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.1208 * totalTime * totalTime - 0.0075 * totalTime + 0.0148));
-                 }*/
+                for(int j = 0; j < 3; j++) totalDistance[j] += shortDistance[j];
 
                 combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
-                //account for error:
-                if(combinedTotalDistance >= 0) {
-                    combinedTotalDistance = (float) (combinedTotalDistance - (0.5 * EPSILON * totalTime * totalTime));
-                    //not += because equation accounts for the fact that error accumulates over time
-                }else combinedTotalDistance = (float) (combinedTotalDistance + (0.5 * EPSILON * totalTime * totalTime));
 
+                if(sensor.getType() == Sensor.TYPE_ACCELEROMETER) { //if using just plain accelerometer, I want to account for error on each independent axis
+                    for (int j = 0; j < 3; j++) {
+                        if (totalDistance[j] >= 0) {
+                            totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
+                            //not += because equation accounts for the fact that error accumulates over time
+                        } else
+                            totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
+                    }
+                }
+                else if(sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){   //else if using LA just account for error in combined value since gravity will not be in there
+                    //account for error:
+                    if (combinedTotalDistance >= 0) {
+                        combinedTotalDistance = (float) (combinedTotalDistance - (0.5 * EPSILON * totalTime * totalTime));
+                        //not += because equation accounts for the fact that error accumulates over time
+                    } else
+                        combinedTotalDistance = (float) (combinedTotalDistance + (0.5 * EPSILON * totalTime * totalTime));
+                }
 
 
                 TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: "
@@ -217,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             lastUpdateTime = System.currentTimeMillis();
 
         } //end    if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on)
-    } //end function
+    } //end function*/
 
     private double triplePythagorean(double a, double b, double c) {
         return (Math.sqrt((a * a) + (b * b) + (c * c)));
