@@ -207,6 +207,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
 
+    private double triplePythagorean(double a, double b, double c) {
+        return (Math.sqrt((a * a) + (b * b) + (c * c)));
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        //not used, but must be included for this to work
+    }
+
 
 
 
@@ -305,15 +314,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         } //end    if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on)
     } //end function*/
 
-
-    private double triplePythagorean(double a, double b, double c) {
-        return (Math.sqrt((a * a) + (b * b) + (c * c)));
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        //not used, but must be included for this to work
-    }
 
 
 
