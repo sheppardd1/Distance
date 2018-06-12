@@ -174,28 +174,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
 
-            if(sensor.getType() == Sensor.TYPE_ACCELEROMETER) { //if using just plain accelerometer, I want to account for error on each independent axis
-                for (int j = 0; j < 3; j++) {
-                    if (totalDistance[j] >= 0) {
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
-                        //not += because totalDistance accumulates itself
-                    } else
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
-                }
+            for (int j = 0; j < 3; j++) {
+                if (totalDistance[j] >= 0) {
+                    totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
+                } else
+                    totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
             }
 
-            else if(sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){   //else if using LA just account for error in combined value since gravity will not be in there
+
+            if(sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){   //if using LA, then total distance over all 3 axes is useful, so calibrate that
                 //account for error:
                 if (combinedTotalDistance >= 0) {
                     combinedTotalDistance -= (0.5 * EPSILON * totalTime * totalTime);
-                    //not += because equation accounts for the fact that error accumulates over time
                 } else
                     combinedTotalDistance += (0.5 * EPSILON * totalTime * totalTime);
             }
 
-                TV1.setText("Acceleration:\nX: " + event.values[0] + "\nY: " + event.values[1] + "\nZ: "
-                        + event.values[2] + "\n\n\nCumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: "
-                        + totalDistanceCalibrated[2] + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance);
+                TV1.setText("Acceleration:\nX: " + event.values[0] + "\nY: " + event.values[1] + "\nZ: " + event.values[2]
+                        + "\n\nUncalibrated x: " + totalDistance[0] + "\nUncalibrated y: " + totalDistance[1] + "\nUncalibrated z: " + totalDistance[2] + "\n\nCumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: " + totalDistanceCalibrated[2]
+                        + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance);
 
                 i++;
 
