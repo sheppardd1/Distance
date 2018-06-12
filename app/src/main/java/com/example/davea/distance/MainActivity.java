@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 TV1.setText("Acceleration:\nX: " + event.values[0] + "\nY: " + event.values[1] + "\nZ: "
                         + event.values[2] + "\n\n\nCumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: "
-                        + totalDistanceCalibrated[2] + "\nTotal Time: " + totalTime + "\n Total Combined Distance: " + combinedTotalDistance);
+                        + totalDistanceCalibrated[2] + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance);
 
                 i++;
 
