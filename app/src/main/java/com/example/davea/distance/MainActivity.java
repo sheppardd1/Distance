@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //constants:
     final public int INTERVAL = 75;
-    //kfinal public int NUMBER_OF_POINTS_TO_AVERAGE = 3;
+    //final public int NUMBER_OF_POINTS_TO_AVERAGE = 3;
     final public float EPSILON = (float) 0.1;    //Adwaya's epsilon: 0.1594
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
