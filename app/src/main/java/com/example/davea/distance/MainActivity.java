@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public int k = 0;
     public double startTime2 = 0;
     public double initialTime = 0;
-    public boolean resetted = false;
+    public boolean wasReset = false;
     public double pausedTime = 0;
 
     //sensors:
@@ -69,17 +69,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //toggle on and off
                 if(on){
                     pausedTime = System.currentTimeMillis();
+                    //when paused, give range of error: equivalent to (combinedTotalDistance - 47.3191%) + " to " + (combinedTotalDistance + 140.899%)
                     TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance * .526809) + " to " + (combinedTotalDistance * 2.40899));
-                    //(give range of error: equivalent to (combinedTotalDistance - combinedTotalDistance * .473191) + " to " + (combinedTotalDistance + combinedTotalDistance * 1.40899))
                 }
                 else{
                     initialTime += (System.currentTimeMillis() - pausedTime);   //prevents totalTime from increasing while paused
                 }
                 on = !on;
                 //i = 0;
-                if(resetted) {
+                if(wasReset) {
                     initialTime = System.currentTimeMillis();
-                    resetted = false;
+                    wasReset = false;
                 }
             }
         });
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if(!on) {
                     TV1.setText("");
                     reset();
-                    resetted = true;
+                    wasReset = true;
                 }
                 else on = false;
             }
