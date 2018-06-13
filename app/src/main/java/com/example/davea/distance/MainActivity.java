@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //toggle on and off
                 if(on){
                     pausedTime = System.currentTimeMillis();
-                    TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance - combinedTotalDistance * .5849) + " to " + (combinedTotalDistance + combinedTotalDistance * .8982));
-                    //(give range of error)
+                    TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance * .526809) + " to " + (combinedTotalDistance * 2.40899));
+                    //(give range of error: equivalent to (combinedTotalDistance - combinedTotalDistance * .473191) + " to " + (combinedTotalDistance + combinedTotalDistance * 1.40899))
                 }
                 else{
                     initialTime += (System.currentTimeMillis() - pausedTime);   //prevents totalTime from increasing while paused
