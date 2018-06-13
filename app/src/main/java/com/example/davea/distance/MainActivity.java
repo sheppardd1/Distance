@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         setup();    //assign and setup everything
 
-
         BtnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -119,7 +118,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             //if deice not not have LA sensor, warn user:
             Toast.makeText(this, "REVERTING TO ACCELEROMETER.\nACCURACY REDUCED.\nUSE FOR TESTING PURPOSES ONLY.", Toast.LENGTH_LONG).show();
         }
-
 
         //buttons:
         BtnStart = findViewById(R.id.Start);
