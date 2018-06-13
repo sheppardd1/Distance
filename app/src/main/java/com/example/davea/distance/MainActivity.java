@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //constants:
     final public int INTERVAL = 75;
     //final public int NUMBER_OF_POINTS_TO_AVERAGE = 3;
-    final public float EPSILON = (float) 0.1;    //Adwaya's epsilon: 0.1594
+    final public float EPSILON = (float) 0.1594;    //Adwaya's epsilon: 0.1594
     //public float Y_AXIS_CORRECTION = (float) -0.24;
 
 
@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //toggle on and off
                 if(on){
                     pausedTime = System.currentTimeMillis();
+                    TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance - combinedTotalDistance * .5849) + " to " + (combinedTotalDistance + combinedTotalDistance * .8982));
+                    //(give range of error)
                 }
                 else{
                     initialTime += (System.currentTimeMillis() - pausedTime);   //prevents totalTime from increasing while paused
@@ -215,10 +217,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //not used, but must be included for this to work
     }
-
-
-
-
 
 
 
