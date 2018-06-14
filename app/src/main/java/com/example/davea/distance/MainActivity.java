@@ -26,15 +26,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public float averageAcceleration[] = new float[3];
     public int i = 0;
     public boolean on = true;
-    public float shortDistance[] = new float[3];
+    //public float shortDistance[] = new float[3];
     public float totalDistance[] = new float[3];
     public float totalDistanceCalibrated[] = new float[3];
     public float combinedTotalDistance = 0;
-    public float speed0[] = new float[3];
+    //public float speed0[] = new float[3];
     public float oldSpeed0[] = new float[3];
     public double startTime = 0;
     public double lastUpdateTime = 0;
-    public double computationTime = 0;
+    //public double computationTime = 0;
     public double totalTime = 0;
     public int k = 0;
     public double startTime2 = 0;
@@ -49,10 +49,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Sensor LASensor;
 
     //constants:
-    final public int INTERVAL = 75;
+    final public int INTERVAL = 500;
     //final public int NUMBER_OF_POINTS_TO_AVERAGE = 3;
-    final public float EPSILON = (float) 0.1594;    //Adwaya's epsilon: 0.1594
+    final public float EPSILON = (float) 0.075;    //Adwaya's epsilon: 0.1594
     //public float Y_AXIS_CORRECTION = (float) -0.24;
+
+    //public float x, y, z, xAv, yAv, zAv, distance, accec, zError, speed, xTotal, yTotal, zTotal, j;
 
 
     @Override
@@ -69,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if(on){
                     pausedTime = System.currentTimeMillis();
                     //when paused, give range of error: equivalent to (combinedTotalDistance - 47.3191%) + " to " + (combinedTotalDistance + 140.899%)
-                    TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance * .526809) + " to " + (combinedTotalDistance * 2.40899));
+                    //TV1.setText(TV1.getText() + "\nRange: " + (combinedTotalDistance * .526809) + " to " + (combinedTotalDistance * 2.40899));
                 }
                 else{
                     initialTime += (System.currentTimeMillis() - pausedTime);   //prevents totalTime from increasing while paused
@@ -135,10 +137,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         combinedTotalDistance = 0;
         i = 0;
         for(int j = 0; j < 3; j++){
-            shortDistance[j] = 0;
+            //shortDistance[j] = 0;
             totalDistance[j] = 0;
             totalDistanceCalibrated[j] = 0;
-            speed0[j] = 0;
+            combinedTotalDistance = 0;
+            //speed0[j] = 0;
             oldSpeed0[j] = 0;
             averageAcceleration[j] = 0;
             startTime = 0;
@@ -149,12 +152,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
 
+    private double triplePythagorean(double a, double b, double c) {
+        return (Math.sqrt((a * a) + (b * b) + (c * c)));
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        //not used, but must be included for this to work
+    }
+
+
+
     @Override
     public void onSensorChanged(SensorEvent event) {
 
         Sensor sensor = event.sensor;
 
-        if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on) {
+        if (on) {
 
             //used for determining the time it took from collecting data to finding the final average of the desired number of data points
             if (i == 0) startTime = System.currentTimeMillis();
@@ -167,54 +181,97 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             totalTime = (System.currentTimeMillis() - initialTime) / 1000;
 
+            i++;
+
+            if(System.currentTimeMillis() - lastUpdateTime >= INTERVAL) {
                 //Now, get distance: dx = v0 * t + 0.5 * a * t^2
-            totalDistance[0] = (float) (0.5 * averageAcceleration[0] * totalTime * totalTime);
-            totalDistance[1] = (float) (0.5 * averageAcceleration[1] * totalTime * totalTime);
-            totalDistance[2] = (float) (0.5 * averageAcceleration[2] * totalTime * totalTime);
+                totalDistance[0] = (float) (0.5 * averageAcceleration[0] * totalTime * totalTime);
+                totalDistance[1] = (float) (0.5 * averageAcceleration[1] * totalTime * totalTime);
+                totalDistance[2] = (float) (0.5 * averageAcceleration[2] * totalTime * totalTime);
 
-            combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
+                for (int j = 0; j < 3; j++) {
+                    if (totalDistance[j] >= 0) {
+                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
+                    } else
+                        totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
+                }
 
-            for (int j = 0; j < 3; j++) {
-                if (totalDistance[j] >= 0) {
-                    totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
-                } else
-                    totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
-            }
+                combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
 
-
-            if(sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION){   //if using LA, then total distance over all 3 axes is useful, so calibrate that
-                //account for error:
-                if (combinedTotalDistance >= 0) {
-                    combinedTotalDistance -= (0.5 * EPSILON * totalTime * totalTime);
-                } else
-                    combinedTotalDistance += (0.5 * EPSILON * totalTime * totalTime);
-            }
+                if (sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {   //if using LA, then total distance over all 3 axes is useful, so calibrate that
+                    //account for error:
+                    if (combinedTotalDistance >= 0) {
+                        combinedTotalDistance -= (0.5 * EPSILON * totalTime * totalTime);
+                    } else
+                        combinedTotalDistance += (0.5 * EPSILON * totalTime * totalTime);
+                }
 
                 TV1.setText("Acceleration:\nX: " + event.values[0] + "\nY: " + event.values[1] + "\nZ: " + event.values[2]
                         + "\n\nUncalibrated x: " + totalDistance[0] + "\nUncalibrated y: " + totalDistance[1] + "\nUncalibrated z: " + totalDistance[2] + "\n\nCumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: " + totalDistanceCalibrated[2]
-                        + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance);
-
-                i++;
+                        + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance + "\n\ni: " + i);
 
                 totalTime += (System.currentTimeMillis() - startTime2) / 1000;
                 startTime2 = System.currentTimeMillis();
 
+                lastUpdateTime = System.currentTimeMillis();
+                //not setting average acceleration to 0 because I will just continuously average it for the entire time the app is running and have "totalDistance =" instead of "totalDistance +="
+                //This way, I don't need speed variables
 
-            lastUpdateTime = System.currentTimeMillis();
-
-        } //end    if ((System.currentTimeMillis() - lastUpdateTime >= INTERVAL) && on)
+            } //end   if(System.currentTimeMillis() - lastUpdateTime >= INTERVAL)
+        } //end    if (on)
     } //end function*/
 
 
-
-    private double triplePythagorean(double a, double b, double c) {
-        return (Math.sqrt((a * a) + (b * b) + (c * c)));
-    }
-
+/*
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        //not used, but must be included for this to work
+    public void onSensorChanged(SensorEvent event) {
+    Sensor sensor = event.sensor;
+
+    if(on) {
+        x = event.values[0];
+        y = event.values[1];
+        z = event.values[2];
+        //if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        float timeInterval = (float) (System.currentTimeMillis() - lastUpdateTime);
+        if (timeInterval > INTERVAL && on) {
+            lastUpdateTime = System.currentTimeMillis();
+
+
+            //compute collective/cumulative average instead of accumulating values and later getting average
+            if (j != 0) {
+                xAv = xTotal / j;
+                yAv = yTotal / j;
+                zAv = zTotal / j;
+                j = 0;
+                xTotal = 0;
+                yTotal = 0;
+                zTotal = 0;
+
+                //Now, get distance:
+                //Method 1: dx = v0 * t + 0.5 * a * t^2
+                timeInterval /= 1000;
+                totalTime+=timeInterval;
+                accec = (float) triplePythagorean(xAv, yAv, zAv - zError);
+
+                distance += (speed * timeInterval) + (0.5 * accec * timeInterval * timeInterval);
+
+                speed += accec * timeInterval;
+
+
+                TV1.setText("x-axis accec: " + xAv + " \ny-axis accec: " + yAv + "\nz-axis accec: " + (zAv-zError) + "\n Total Time: "
+                        + totalTime + "\nUncalibratedDistance : " + distance + "\nDistance: " + distance);
+            }
+        } else {
+            xTotal += x;
+            yTotal += y;
+            zTotal += z;
+            j++;
+
+        }
     }
+
+}
+*/
 
 
 
