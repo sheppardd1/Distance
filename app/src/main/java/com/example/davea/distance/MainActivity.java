@@ -35,12 +35,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public double startTime = 0;
     public double lastUpdateTime = 0;
     public double computationTime = 0;
-    public double totalTime = 0;
+    //public double totalTime = 0;
     public int k = 0;
     public double startTime2 = 0;
     public double initialTime = 0;
     public boolean wasReset = false;
     public double pausedTime = 0;
+    public boolean firstTime = true;
+    public double totalTime2 = 0;
 
     //sensors:
     public Sensor accelerometer;
@@ -145,10 +147,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             //oldSpeed0[j] = 0;
             averageAcceleration[j] = 0;
             startTime = 0;
-            totalTime = 0;
+            startTime2 = 0;
+            //totalTime = 0;
             k = 0;
             pausedTime = 0;
             computationTime = 0;
+            firstTime = true;
+            totalTime2 = 0;
         }
     }
 
@@ -172,7 +177,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (on) {
 
             //used for determining the time it took from collecting data to finding the final average of the desired number of data points
-            if (i == 0) startTime = System.currentTimeMillis();
+            if (firstTime) {
+                startTime2 = System.currentTimeMillis();
+                firstTime = false;
+            }
 
             //sum up acceleration values
             //not using for loop in order to increase efficiency and decrease execution time
@@ -180,14 +188,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             averageAcceleration[1] = (averageAcceleration[1] * i + event.values[1]) / (i + 1);
             averageAcceleration[2] = (averageAcceleration[2] * i + event.values[2]) / (i + 1);
 
-            computationTime = (System.currentTimeMillis() - startTime) / 1000;
-
-            totalTime = (System.currentTimeMillis() - initialTime) / 1000;
+            //totalTime = (System.currentTimeMillis() - initialTime) / 1000;
 
             i++;
 
             if(System.currentTimeMillis() - lastUpdateTime >= INTERVAL) {
 
+                computationTime = (System.currentTimeMillis() - startTime2) / 1000;
+                totalTime2 += computationTime;
+
+                startTime2 = System.currentTimeMillis();
 
                 //Now, get distance: dx = v0 * t + 0.5 * a * t^2
                 shortDistance[0] = (float) (speed0[0] * computationTime + 0.5 * averageAcceleration[0] * computationTime * computationTime);
@@ -206,9 +216,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int j = 0; j < 3; j++) {
                     if (totalDistance[j] >= 0) {
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime * totalTime));
+                        totalDistanceCalibrated[j] = (float) (totalDistance[j] - (0.5 * EPSILON * totalTime2 * totalTime2));
                     } else
-                        totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime * totalTime));
+                        totalDistanceCalibrated[j] = (float) (totalDistance[j] + (0.5 * EPSILON * totalTime2 * totalTime2));
                 }
 
                 combinedTotalDistance = (float) triplePythagorean(totalDistance[0], totalDistance[1], totalDistance[2]);
@@ -216,21 +226,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {   //if using LA, then total distance over all 3 axes is useful, so calibrate that
                     //account for error:
                     if (combinedTotalDistance >= 0) {
-                        combinedTotalDistance -= (0.5 * EPSILON * totalTime * totalTime);
+                        combinedTotalDistance -= (0.5 * EPSILON * totalTime2 * totalTime2);
                     } else
-                        combinedTotalDistance += (0.5 * EPSILON * totalTime * totalTime);
+                        combinedTotalDistance += (0.5 * EPSILON * totalTime2 * totalTime2);
                 }
 
                 TV1.setText("Acceleration:\nX: " + averageAcceleration[0] + "\nY: " + averageAcceleration[1] + "\nZ: " + averageAcceleration[2]
                         + "\n\nUncalibrated x: " + totalDistance[0] + "\nUncalibrated y: " + totalDistance[1] + "\nUncalibrated z: " + totalDistance[2] + "\n\nCumulative Calibrated:\nX: " + totalDistanceCalibrated[0] + "\nY: " + totalDistanceCalibrated[1] + "\nZ: " + totalDistanceCalibrated[2]
-                        + "\n\nTotal Time: " + totalTime + "\n\nTotal Combined Distance: " + combinedTotalDistance + "\n\ni: " + i);
+                        + "\n\nTotal Time: " + totalTime2 + "\n\nTotal Combined Distance: " + combinedTotalDistance + "\n\ni: " + i);
 
-                totalTime += (System.currentTimeMillis() - startTime2) / 1000;
-                startTime2 = System.currentTimeMillis();
+                //totalTime += (System.currentTimeMillis() - startTime2) / 1000;
+
 
                 lastUpdateTime = System.currentTimeMillis();
 
                 i = 0;
+
+                float time = (float) (System.currentTimeMillis() - startTime);
 
 
             } //end   if(System.currentTimeMillis() - lastUpdateTime >= INTERVAL)
